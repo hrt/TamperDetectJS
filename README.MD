@@ -1,3 +1,6 @@
+https://hrt.github.io/ProxyDetectJS/
+
+
 # Detecting Javascript "Proxy" objects
 > "It is impossible to determine whether an object is a proxy or not (transparent virtualization)." - https://exploringjs.com/es6/ch_proxies.html
 

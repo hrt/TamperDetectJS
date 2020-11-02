@@ -110,6 +110,28 @@
 				}
 			}
 			return false;
+		},
+		function check_stack_5() {
+			Error.stackTraceLimit = 10;
+			try {
+				Date.prototype.toDateString.apply(Array.prototype.join.toString, []);
+			} catch(e) {
+				if (e.stack.includes(redefined_func)) {
+					return true;
+				}
+			}
+			return false;
+		},
+		function check_stack_6() {
+			Error.stackTraceLimit = 10;
+			try {
+				Date.prototype.toDateString.apply(Array.prototype.join, []);
+			} catch(e) {
+				if (e.stack.includes('[object Function]')) {
+					return true;
+				}
+			}
+			return false;
 		}
 	];
 

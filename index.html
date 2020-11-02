@@ -3,6 +3,7 @@
 <script>
 	const original_join = Array.prototype.join;
 	const sig_toString = "function toString() { [native code] }";
+	const sig_toDateString = "function toDateString() { [native code] }";
 	const sig_join = "function join() { [native code] }";
 	console.warn('loaded detector')
 
@@ -95,7 +96,7 @@
 			try {
 				Date.prototype.toString.apply(Array.prototype.join, []);
 			} catch(e) {
-				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply') || e.stack.includes('[object Function]')){
+				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply') || !e.stack.includes(sig_join)){
 					return true;
 				}
 			}
@@ -128,12 +129,56 @@
 			try {
 				Date.prototype.toDateString.apply(Array.prototype.join, []);
 			} catch(e) {
-				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply') || e.stack.includes('[object Function]')) {
+				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply') || !e.stack.includes(sig_join)) {
 					return true;
 				}
 			}
 			return false;
-		}
+		},
+		function check_stack_7() {
+			Error.stackTraceLimit = 10;
+			try {
+				Date.prototype.toString.apply(Function.prototype.toString);
+			} catch(e) {
+				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply') || !e.stack.includes(sig_toString)) {
+					return true;
+				}
+			}
+			return false;
+		},
+		function check_stack_8() {
+			Error.stackTraceLimit = 10;
+			try {
+				Date.prototype.toDateString.apply(Function.prototype.toString);
+			} catch(e) {
+				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply') || !e.stack.includes(sig_toString)) {
+					return true;
+				}
+			}
+			return false;
+		},
+		function check_stack_8() {
+			Error.stackTraceLimit = 10;
+			try {
+				Date.prototype.toDateString.apply(Date.prototype.toString);
+			} catch(e) {
+				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply') || !e.stack.includes(sig_toString)) {
+					return true;
+				}
+			}
+			return false;
+		},
+		function check_stack_8() {
+			Error.stackTraceLimit = 10;
+			try {
+				Date.prototype.toString.apply(Date.prototype.toDateString);
+			} catch(e) {
+				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply') || !e.stack.includes(sig_toDateString)) {
+					return true;
+				}
+			}
+			return false;
+		},
 	];
 
 	// wait for cheats to load

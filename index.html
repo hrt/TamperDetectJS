@@ -1,0 +1,138 @@
+<html>
+<head>
+<script>
+	const original_join = Array.prototype.join;
+	const redefined_func = "function () { [native code] }";
+	console.warn('loaded detector')
+
+	// detections return true if something was detected
+	var detections = [
+		function check_modification() {
+			return Array.prototype.join !== original_join;
+		},
+		function check_toString_1() {
+			return Array.prototype.join.toString() == redefined_func;
+		},
+		function check_toString_2() {
+			return Function.prototype.toString.apply(Array.prototype.join, []) == redefined_func;
+		},
+		function check_toString_3() {
+			return Function.prototype.toString.apply(Array.prototype.join.toString) == redefined_func;
+		},
+		function check_toString_4() {
+			return Object.getOwnPropertyDescriptor(Array.prototype.join, 'toString') !== undefined; // toString shouldn't be manually defined
+		},
+		function check_toString_5() {
+			return Array.prototype.join.toString.toString() == redefined_func;
+		},
+		function check_toString_6() {
+			return Array.prototype.join.toString.name.includes('bind'); // if toString was manually defined by .bind
+		},
+		function check_toString_7() {
+			return Date.prototype.toString.toString() == redefined_func;
+		},
+		function check_toString_8() {
+			return Function.prototype.toString.apply(Date.prototype.toString) == redefined_func;
+		},
+		function check_callee() {
+			// make sure this is thrown
+			try {
+				Array.prototype.join.arguments;
+			} catch(e) {
+				return false;
+			}
+			return true;
+		},
+		function check_prototype() {
+			return "prototype" in Array.prototype.join; // by Lemons#0001 https://github.com/Lemons1337/
+		},
+		function sanity_check() {
+			try {
+				return ['1', 2, {'toString': () => '3'}].join(',') !== '1,2,3';
+			} catch(e) {
+				return true;
+			}
+			return false;
+		},
+		function check_stack_1() {
+			// detect proxy since they will have to call the actual function -> increased stack trace lines
+			Error.stackTraceLimit = 10;
+			try {
+				Array.prototype.join.apply();
+			} catch(e) {
+				return e.stack.split('\n').length !== 4; // a tailored stack trace check
+			}
+			return true;
+		},
+		function check_stack_2() {
+			// join and many other functions will implicitly call toString on arguments so rig toString to inspect the stack for increased size
+			// this is one of the harder detection vectors for an adversary to truly fix since they cannot intercept the exception in this case
+			// consider concealing the rigged 'toString'
+			// worth noting that there exists a way to modify the full stack trace to anything without catching/throwing: https://github.com/hrt/StackTraceSpoofJS
+			var arr = [
+				{
+					'toString': () => {
+						Error.stackTraceLimit = 10;
+						try {
+							null.test
+						} catch(e) {
+							if (e.stack.split('\n').length !== 5) {
+								return 'DETECTED';
+							}
+						}
+						return '';
+					}
+				}
+			];
+			return arr.join() === 'DETECTED';
+		},
+		function check_stack_3() {
+			Error.stackTraceLimit = 10;
+			try {
+				Date.prototype.toString.apply(Array.prototype.join, []);
+			} catch(e) {
+				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply')){
+					return true;
+				}
+			}
+			return false;
+		},
+		function check_stack_4() {
+			Error.stackTraceLimit = 10;
+			try {
+				Date.prototype.toString.apply(Array.prototype.join.toString, []);
+			} catch(e) {
+				if (e.stack.includes(redefined_func)) {
+					return true;
+				}
+			}
+			return false;
+		}
+	];
+
+	// wait for cheats to load
+	setTimeout(() => { 
+		var ul = document.getElementById('detections');
+		var hits = 0;
+		for (var i = 0; i < detections.length; i++) {
+			if (detections[i]()) {
+				var msg = 'DETECTED: ' + detections[i].name;
+				console.warn(msg);
+				var li = document.createElement("LI");
+				li.append(document.createTextNode(msg));
+				ul.appendChild(li);
+				hits += 1;
+			}
+		}
+		if (!hits) {
+			var li = document.createElement("LI");
+			li.append(document.createTextNode('No hook detected (Array.prototype.join)'));
+			ul.appendChild(li);
+		}
+	}, 200);
+</script>
+</head>
+<body>
+	<ul id='detections'></ul>
+</body>
+</html>

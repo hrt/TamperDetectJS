@@ -102,7 +102,7 @@
 			}
 			return false;
 		},
-		function check_stack_4_toString() {
+		function check_stack_4_toStrings() {
 			Error.stackTraceLimit = 10;
 			try {
 				Date.prototype.toString.apply(Array.prototype.join.toString, []);
@@ -186,7 +186,11 @@
 		var ul = document.getElementById('detections');
 		var hits = 0;
 		for (var i = 0; i < detections.length; i++) {
-			if (detections[i]()) {
+			var detected = true;
+			try {
+				var detected = detections[i]();
+			} catch(e) {}
+			if (detected) {
 				var msg = 'DETECTED: ' + detections[i].name;
 				console.warn(msg);
 				var li = document.createElement("LI");

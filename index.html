@@ -34,7 +34,7 @@
 		function check_toString_8() {
 			return Function.prototype.toString.apply(Date.prototype.toString) == redefined_func;
 		},
-		function check_callee() {
+		function check_arguments_1() {
 			// make sure this is thrown
 			try {
 				Array.prototype.join.arguments;
@@ -42,6 +42,9 @@
 				return false;
 			}
 			return true;
+		},
+		function check_arguments_2() {
+			return Object.getOwnPropertyDescriptor(Array.prototype.join, 'arguments') !== undefined;
 		},
 		function check_prototype() {
 			return "prototype" in Array.prototype.join; // by Lemons#0001 https://github.com/Lemons1337/

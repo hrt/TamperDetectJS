@@ -2,7 +2,8 @@
 <head>
 <script>
 	const original_join = Array.prototype.join;
-	const redefined_func = "function () { [native code] }";
+	const sig_toString = "function toString() { [native code] }";
+	const sig_join = "function join() { [native code] }";
 	console.warn('loaded detector')
 
 	// detections return true if something was detected
@@ -11,28 +12,28 @@
 			return Array.prototype.join !== original_join;
 		},
 		function check_toString_1() {
-			return Array.prototype.join.toString() == redefined_func;
+			return Array.prototype.join.toString() !== sig_join;
 		},
 		function check_toString_2() {
-			return Function.prototype.toString.apply(Array.prototype.join, []) == redefined_func;
+			return Function.prototype.toString.apply(Array.prototype.join, []) !== sig_join;
 		},
 		function check_toString_3() {
-			return Function.prototype.toString.apply(Array.prototype.join.toString) == redefined_func;
+			return Function.prototype.toString.apply(Array.prototype.join.toString) !== sig_toString;
 		},
 		function check_toString_4() {
 			return Object.getOwnPropertyDescriptor(Array.prototype.join, 'toString') !== undefined; // toString shouldn't be manually defined
 		},
 		function check_toString_5() {
-			return Array.prototype.join.toString.toString() == redefined_func;
+			return Array.prototype.join.toString.toString() !== sig_toString;
 		},
 		function check_toString_6() {
 			return Array.prototype.join.toString.name.includes('bind'); // if toString was manually defined by .bind
 		},
 		function check_toString_7() {
-			return Date.prototype.toString.toString() == redefined_func;
+			return Date.prototype.toString.toString() !== sig_toString;
 		},
 		function check_toString_8() {
-			return Function.prototype.toString.apply(Date.prototype.toString) == redefined_func;
+			return Function.prototype.toString.apply(Date.prototype.toString) !== sig_toString;
 		},
 		function check_arguments_1() {
 			// make sure this is thrown
@@ -105,7 +106,7 @@
 			try {
 				Date.prototype.toString.apply(Array.prototype.join.toString, []);
 			} catch(e) {
-				if (!e.stack.includes('function toString() { [native code] }')) {
+				if (!e.stack.includes(sig_toString)) {
 					return true;
 				}
 			}
@@ -116,7 +117,7 @@
 			try {
 				Date.prototype.toDateString.apply(Array.prototype.join.toString, []);
 			} catch(e) {
-				if (!e.stack.includes('function toString() { [native code] }')) {
+				if (!e.stack.includes(sig_toString)) {
 					return true;
 				}
 			}

@@ -102,7 +102,7 @@
 			}
 			return false;
 		},
-		function check_stack_4() {
+		function check_stack_4_toString() {
 			Error.stackTraceLimit = 10;
 			try {
 				Date.prototype.toString.apply(Array.prototype.join.toString, []);
@@ -113,7 +113,7 @@
 			}
 			return false;
 		},
-		function check_stack_5() {
+		function check_stack_5_toString() {
 			Error.stackTraceLimit = 10;
 			try {
 				Date.prototype.toDateString.apply(Array.prototype.join.toString, []);
@@ -135,7 +135,7 @@
 			}
 			return false;
 		},
-		function check_stack_7() {
+		function check_stack_7_toString() {
 			Error.stackTraceLimit = 10;
 			try {
 				Date.prototype.toString.apply(Function.prototype.toString);
@@ -146,7 +146,7 @@
 			}
 			return false;
 		},
-		function check_stack_8() {
+		function check_stack_8_toString() {
 			Error.stackTraceLimit = 10;
 			try {
 				Date.prototype.toDateString.apply(Function.prototype.toString);
@@ -157,7 +157,7 @@
 			}
 			return false;
 		},
-		function check_stack_9() {
+		function check_stack_9_toString() {
 			Error.stackTraceLimit = 10;
 			try {
 				Date.prototype.toDateString.apply(Date.prototype.toString);
@@ -168,7 +168,7 @@
 			}
 			return false;
 		},
-		function check_stack_10() {
+		function check_stack_10_toString() {
 			Error.stackTraceLimit = 10;
 			try {
 				Date.prototype.toString.apply(Date.prototype.toDateString);

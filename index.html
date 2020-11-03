@@ -73,9 +73,6 @@
 		},
 		function check_stack_2() {
 			// join and many other functions will implicitly call toString on arguments so rig toString to inspect the stack for increased size
-			// this is one of the harder detection vectors for an adversary to truly fix since they cannot intercept the exception in this case
-			// consider concealing the rigged 'toString'
-			// worth noting that there exists a way to modify the full stack trace to anything without catching/throwing: https://github.com/hrt/StackTraceSpoofJS
 			var arr = [
 				{
 					'toString': () => {

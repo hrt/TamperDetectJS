@@ -237,7 +237,7 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes('function join() { [native code] }');	
+				return !stack.includes(sig_join);	
 			}
 		},
 		function checkStackTraceLimit() {

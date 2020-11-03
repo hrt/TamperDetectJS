@@ -1,5 +1,4 @@
-https://hrt.github.io/TamperDetectJS/
-![](https://i.imgur.com/wzvUtgM.png)
+![https://hrt.github.io/TamperDetectJS/](https://i.imgur.com/wzvUtgM.png)
 
 
 # Detecting alterered native functions / prototypes in Javascript

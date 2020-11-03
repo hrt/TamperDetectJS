@@ -217,7 +217,7 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return e.stack.includes('object Function');
+				return !e.stack.includes(sig_join);
 			}
 		},
 		function check_stack_13_toString_in() {
@@ -227,7 +227,7 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return e.stack.includes('object Function');
+				return !e.stack.includes(sig_toString);
 			}
 		},
 		function checkStackTraceLimit() {

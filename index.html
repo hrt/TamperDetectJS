@@ -207,7 +207,7 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return e.stack.includes('at Object.toString (<anonymous>)');
+				return stack.includes('at Object.toString (<anonymous>)');
 			}
 		},
 		function check_stack_12_in() {
@@ -217,7 +217,7 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !e.stack.includes(sig_join);
+				return !stack.includes(sig_join);
 			}
 		},
 		function check_stack_13_toString_in() {
@@ -227,15 +227,17 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !e.stack.includes(sig_toString);
+				return !stack.includes(sig_toString);
 			}
 		},
 		function check_stack_14_toLocaleDateString() {
 			// from Lemons#0001 https://github.com/Lemons1337/
 			try {
 				Date.prototype.toLocaleDateString.call(Array.prototype.join);
-			} catch(err) {
-				return !err.stack.includes('function join() { [native code] }');	
+			} catch(e) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return !stack.includes('function join() { [native code] }');	
 			}
 		},
 		function checkStackTraceLimit() {

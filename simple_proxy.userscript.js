@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         JoinHook
+// @name         Simple Proxy
 // @include      *
 // @run-at       document-start
 // ==/UserScript==

@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      0.1
 // @description  try to take over the world!
-// @author       You
+// @author       https://hrt.github.io/TamperDetectJS/
 // @match        *://*/*
 // @grant        none
 // @run-at       document-start
@@ -14,7 +14,7 @@
         return error.stack
                           .replace(/.*Object\.apply.*\n/g, '')
                           .replace(/(.*)Proxy\.(.*)/g, '$1Function.$2')
-    }
+    };
 
     var redirections = new WeakMap();
 
@@ -25,7 +25,7 @@
     }});
     redirections.set(Array.prototype.join, Array_join);
 
-    function fix_toString(parent, key) {
+    function conceal(parent, key) {
         const og = parent[key];
         parent[key] = new Proxy(og, {
             apply: function(target, _this, _arguments) {
@@ -37,9 +37,16 @@
             }
         })
         redirections.set(parent[key], og);
+    };
+    var descriptors = Object.getOwnPropertyDescriptors(window);
+    for (var key in descriptors) {
+        try {
+            conceal(window[key].prototype, 'toString');
+            conceal(window[key].prototype, 'toLocaleString');
+            conceal(window[key].prototype, 'toDateString');
+            conceal(window[key].prototype, 'toLocaleDateString');
+            conceal(window[key].prototype, 'toLocaleTimeString');
+        } catch(e) {}
     }
-    fix_toString(Function.prototype, 'toString');
-    fix_toString(Date.prototype, 'toString');
-    fix_toString(Date.prototype, 'toDateString');
 
 })();

@@ -19,11 +19,11 @@ You can view `index.html` on your browser here https://hrt.github.io/TamperDetec
 I've included two tampermonkey content script that tampers with `Array.prototype.join`.
 
 
-With the detected content script loaded that performs a simple Proxy, opening the above page results in:
+With the simple proxy content script loaded, opening the above page results in:
 
 ![](https://i.imgur.com/wzvUtgM.png)
 
 
-Included a content script `undetected_proxy.userscript.js` which shows that even these methods used to detect proxy objects can be concealed by altering stack traces :
+With the concealed proxy script loaded we see that the methods used to detect proxy objects can be concealed:
 
 ![](https://i.imgur.com/9oXL6EV.png)

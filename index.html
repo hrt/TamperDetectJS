@@ -49,7 +49,8 @@
 			return Object.getOwnPropertyDescriptor(Array.prototype.join, 'arguments') !== undefined;
 		},
 		function check_prototype() {
-			return "prototype" in Array.prototype.join; // by Lemons#0001 https://github.com/Lemons1337/
+			// from Lemons#0001 https://github.com/Lemons1337/
+			return "prototype" in Array.prototype.join;
 		},
 		function sanity_check() {
 			try {
@@ -73,6 +74,9 @@
 		},
 		function check_stack_2() {
 			// join and many other functions will implicitly call toString on arguments so rig toString to inspect the stack for increased size
+			// this is one of the harder detection vectors for an adversary to truly fix since they cannot intercept the exception in this case
+			// consider concealing the rigged 'toString'
+			// worth noting that there exists a way to modify the full stack trace to anything without catching/throwing: https://github.com/hrt/StackTraceSpoofJS
 			var arr = [
 				{
 					'toString': () => {
@@ -195,6 +199,14 @@
 				}
 			}
 			return false;
+		},
+		function check_stack_11_object_create() {
+			// from Lemons#0001 https://github.com/Lemons1337/
+			try {
+				Object.create(Array.prototype.join).toString();
+			} catch(err) {
+				return err.stack.includes('at Object.toString (<anonymous>)');
+			}
 		},
 		function checkStackTraceLimit() {
 			return Error.stackTraceLimit !== 10;

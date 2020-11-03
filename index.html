@@ -210,6 +210,15 @@
 				return e.stack.includes('at Object.toString (<anonymous>)');
 			}
 		},
+		function check_stack_12_in() {
+			try {
+				Array.prototype.join in 0;
+			} catch(e) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return e.stack.includes('object Function');
+			}
+		},
 		function checkStackTraceLimit() {
 			return Error.stackTraceLimit !== 10;
 		}

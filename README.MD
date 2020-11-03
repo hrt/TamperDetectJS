@@ -1,4 +1,5 @@
 https://hrt.github.io/TamperDetectJS/
+![](https://i.imgur.com/wzvUtgM.png)
 
 
 # Detecting alterered native functions / prototypes in Javascript
@@ -6,7 +7,7 @@ https://hrt.github.io/TamperDetectJS/
 
 Detecting altered prototypes is useful for when you don't want 3rd party scripts from messing with your page - including anti cheats for certain games. This repo explores methods of detecting if a method has been tampered with as well as methods to get around such detections.
 
-In conclusion, it's possible to determine if a proxy of a native function is a proxy.
+In conclusion, it's possible to determine if a proxy of a native function is a proxy. There are many tells
 
 
 
@@ -20,12 +21,4 @@ You can view `index.html` on your browser here https://hrt.github.io/TamperDetec
 
 I've included two tampermonkey content script that tampers with `Array.prototype.join`.
 
-
-With the simple proxy content script loaded, opening the above page results in:
-
-![](https://i.imgur.com/wzvUtgM.png)
-
-
-With the concealed proxy script loaded we see that the methods used to detect proxy objects can be concealed:
-
-![](https://i.imgur.com/9oXL6EV.png)
+One is a simple proxy that gets detected. The attempts to conceal the proxy.

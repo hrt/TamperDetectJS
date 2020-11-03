@@ -1,5 +1,7 @@
 ![https://hrt.github.io/TamperDetectJS/](https://i.imgur.com/wzvUtgM.png)
 
+https://hrt.github.io/TamperDetectJS/
+
 
 # Detecting alterered native functions / prototypes in Javascript
 > "It is impossible to determine whether an object is a proxy or not (transparent virtualization)." - https://exploringjs.com/es6/ch_proxies.html

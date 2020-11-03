@@ -24,6 +24,6 @@ I've included two tampermonkey content script that tampers with `Array.prototype
 
 One is a simple proxy that gets detected. The other attempts to conceal the proxy.
 
-
+---
 
 Thanks to [Lemons1337](https://github.com/lemons1337) for helping find some methods.

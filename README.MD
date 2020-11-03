@@ -4,7 +4,7 @@ https://hrt.github.io/ProxyDetectJS/
 # Detecting Javascript "Proxy" objects
 > "It is impossible to determine whether an object is a proxy or not (transparent virtualization)." - https://exploringjs.com/es6/ch_proxies.html
 
-Detecting altered prototypes is useful for when you don't want 3rd party scripts from messing with your page. This repo explores methods of detecting if a method has been tampered with.
+Detecting altered prototypes is useful for when you don't want 3rd party scripts from messing with your page. This repo explores methods of detecting if a method has been tampered with as well as methods to get around such detections.
 
 
 

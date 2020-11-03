@@ -230,6 +230,14 @@
 				return !e.stack.includes(sig_toString);
 			}
 		},
+		function check_stack_14_toLocaleDateString() {
+			// from Lemons#0001 https://github.com/Lemons1337/
+			try {
+			    Date.prototype.toLocaleDateString.call(Array.prototype.join);
+			} catch(err) {
+				return !err.stack.includes('function join() { [native code] }');	
+			}
+		},
 		function checkStackTraceLimit() {
 			return Error.stackTraceLimit !== 10;
 		}

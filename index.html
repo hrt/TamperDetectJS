@@ -103,11 +103,9 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				if (stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_join)){
-					return true;
-				}
+				return stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_join);
 			}
-			return false;
+			return true;
 		},
 		function check_stack_4_toString() {
 			Error.stackTraceLimit = 10;
@@ -116,11 +114,9 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				if (!stack.includes(sig_toString)) {
-					return true;
-				}
+				return !stack.includes(sig_toString)
 			}
-			return false;
+			return true;
 		},
 		function check_stack_5_toString() {
 			Error.stackTraceLimit = 10;
@@ -129,11 +125,9 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				if (!stack.includes(sig_toString)) {
-					return true;
-				}
+				return !stack.includes(sig_toString);
 			}
-			return false;
+			return true;
 		},
 		function check_stack_6() {
 			Error.stackTraceLimit = 10;
@@ -142,11 +136,9 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				if (stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_join)) {
-					return true;
-				}
+				return stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_join);
 			}
-			return false;
+			return true;
 		},
 		function check_stack_7_toString() {
 			Error.stackTraceLimit = 10;
@@ -155,11 +147,9 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				if (stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toString)) {
-					return true;
-				}
+				return stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toString);
 			}
-			return false;
+			return true;
 		},
 		function check_stack_8_toString() {
 			Error.stackTraceLimit = 10;
@@ -168,11 +158,9 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				if (stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toString)) {
-					return true;
-				}
+				return stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toString);
 			}
-			return false;
+			return true;
 		},
 		function check_stack_9_toString() {
 			Error.stackTraceLimit = 10;
@@ -181,11 +169,9 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				if (stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toString)) {
-					return true;
-				}
+				return stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toString);
 			}
-			return false;
+			return true;
 		},
 		function check_stack_10_toString() {
 			Error.stackTraceLimit = 10;
@@ -194,11 +180,9 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				if (stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toDateString)) {
-					return true;
-				}
+				return stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toDateString);
 			}
-			return false;
+			return true;
 		},
 		function check_stack_11_object_create() {
 			// from Lemons#0001 https://github.com/Lemons1337/
@@ -209,6 +193,7 @@
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
 				return stack.includes('at Object.toString (<anonymous>)');
 			}
+			return true;
 		},
 		function check_stack_12_in() {
 			// from Lemons#0001 https://github.com/Lemons1337/
@@ -219,6 +204,7 @@
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
 				return !stack.includes(sig_join);
 			}
+			return true;
 		},
 		function check_stack_13_toString_in() {
 			// from Lemons#0001 https://github.com/Lemons1337/
@@ -229,6 +215,7 @@
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
 				return !stack.includes(sig_toString);
 			}
+			return true;
 		},
 		function check_stack_14_toLocaleDateString() {
 			// from Lemons#0001 https://github.com/Lemons1337/
@@ -239,9 +226,27 @@
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
 				return !stack.includes(sig_join);	
 			}
+			return true;
 		},
-		function checkStackTraceLimit() {
-			return Error.stackTraceLimit !== 10;
+		function check_stack_15_toLocaleDateString() {
+			try {
+				Date.prototype.toLocaleDateString.call(Array.prototype.join);
+			} catch(e) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return !stack.includes(sig_join);	
+			}
+			return true;
+		},
+		function check_stack_16_ArrayBuffer() {
+			try {
+				ArrayBuffer.prototype.slice(Array.prototype.join);
+			} catch(e) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return !stack.includes("incompatible receiver #<ArrayBuffer>");	
+			}
+			return true;
 		}
 	];
 

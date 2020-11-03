@@ -233,7 +233,7 @@
 		function check_stack_14_toLocaleDateString() {
 			// from Lemons#0001 https://github.com/Lemons1337/
 			try {
-			    Date.prototype.toLocaleDateString.call(Array.prototype.join);
+				Date.prototype.toLocaleDateString.call(Array.prototype.join);
 			} catch(err) {
 				return !err.stack.includes('function join() { [native code] }');	
 			}

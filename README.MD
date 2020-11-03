@@ -8,7 +8,7 @@ https://hrt.github.io/TamperDetectJS/
 
 Detecting altered prototypes is useful for when you don't want 3rd party scripts from messing with your page - including anti cheats for certain games. This repo explores methods of detecting if a method has been tampered with as well as methods to get around such detections.
 
-In conclusion, it's possible to determine if a proxy of a native function is a proxy. There are many tells
+In conclusion, it's possible to determine if a proxy of a native function is a proxy. [There are many tells]( https://github.com/hrt/TamperDetectJS/blob/main/index.html#L12-L198).
 
 
 

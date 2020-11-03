@@ -257,6 +257,16 @@
 				return !stack.includes(sig_join);	
 			}
 			return true;
+		},
+		function check_stack_18_BigUint64Array_sort() {
+			try {
+				BigUint64Array.prototype.sort.apply(Array.prototype.join);
+			} catch(e) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return !stack.includes(sig_join);	
+			}
+			return true;
 		}
 	];
 

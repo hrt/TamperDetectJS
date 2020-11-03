@@ -12,7 +12,7 @@ Detecting altered prototypes is useful for when you don't want 3rd party scripts
 
 
 
-`index.html` is a standalone page with embeded javascript that will check if `Array.prototype.join` has been tampered with. It includes explanations.
+`index.html` is a standalone page with embeded javascript that will check if `Array.prototype.join` has been tampered with.
 
 You can view `index.html` on your browser here https://hrt.github.io/TamperDetectJS/
 

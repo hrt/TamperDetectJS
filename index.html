@@ -204,8 +204,10 @@
 			// from Lemons#0001 https://github.com/Lemons1337/
 			try {
 				Object.create(Array.prototype.join).toString();
-			} catch(err) {
-				return err.stack.includes('at Object.toString (<anonymous>)');
+			} catch(e) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return e.stack.includes('at Object.toString (<anonymous>)');
 			}
 		},
 		function checkStackTraceLimit() {

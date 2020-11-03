@@ -5,7 +5,7 @@
 	const sig_toString = "function toString() { [native code] }";
 	const sig_toDateString = "function toDateString() { [native code] }";
 	const sig_join = "function join() { [native code] }";
-	console.warn('loaded detector')
+	console.warn('loaded detector');
 
 	// detections return true if something was detected
 	var detections = [
@@ -65,7 +65,9 @@
 			try {
 				Array.prototype.join.apply();
 			} catch(e) {
-				return e.stack.split('\n').length !== 4; // a tailored stack trace check
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return stack.split('\n').length !== 4; // a tailored stack trace check
 			}
 			return true;
 		},
@@ -81,7 +83,9 @@
 						try {
 							null.test
 						} catch(e) {
-							if (e.stack.split('\n').length !== 5) {
+							const stack = e.stack;
+							console.log('%s\n----\n%s', arguments.callee.name, stack);
+							if (stack.split('\n').length !== 5) {
 								return 'DETECTED';
 							}
 						}
@@ -96,18 +100,22 @@
 			try {
 				Date.prototype.toString.apply(Array.prototype.join, []);
 			} catch(e) {
-				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply') || !e.stack.includes(sig_join)){
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				if (stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_join)){
 					return true;
 				}
 			}
 			return false;
 		},
-		function check_stack_4_toStrings() {
+		function check_stack_4_toString() {
 			Error.stackTraceLimit = 10;
 			try {
 				Date.prototype.toString.apply(Array.prototype.join.toString, []);
 			} catch(e) {
-				if (!e.stack.includes(sig_toString)) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				if (!stack.includes(sig_toString)) {
 					return true;
 				}
 			}
@@ -118,7 +126,9 @@
 			try {
 				Date.prototype.toDateString.apply(Array.prototype.join.toString, []);
 			} catch(e) {
-				if (!e.stack.includes(sig_toString)) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				if (!stack.includes(sig_toString)) {
 					return true;
 				}
 			}
@@ -129,7 +139,9 @@
 			try {
 				Date.prototype.toDateString.apply(Array.prototype.join, []);
 			} catch(e) {
-				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply') || !e.stack.includes(sig_join)) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				if (stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_join)) {
 					return true;
 				}
 			}
@@ -140,7 +152,9 @@
 			try {
 				Date.prototype.toString.apply(Function.prototype.toString);
 			} catch(e) {
-				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply') || !e.stack.includes(sig_toString)) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				if (stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toString)) {
 					return true;
 				}
 			}
@@ -151,7 +165,9 @@
 			try {
 				Date.prototype.toDateString.apply(Function.prototype.toString);
 			} catch(e) {
-				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply') || !e.stack.includes(sig_toString)) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				if (stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toString)) {
 					return true;
 				}
 			}
@@ -162,7 +178,9 @@
 			try {
 				Date.prototype.toDateString.apply(Date.prototype.toString);
 			} catch(e) {
-				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply') || !e.stack.includes(sig_toString)) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				if (stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toString)) {
 					return true;
 				}
 			}
@@ -173,12 +191,17 @@
 			try {
 				Date.prototype.toString.apply(Date.prototype.toDateString);
 			} catch(e) {
-				if (e.stack.includes('Proxy.toString') || e.stack.includes('apply') || !e.stack.includes(sig_toDateString)) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				if (stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toDateString)) {
 					return true;
 				}
 			}
 			return false;
 		},
+		function checkStackTraceLimit() {
+			return Error.stackTraceLimit !== 10;
+		}
 	];
 
 	// wait for cheats to load

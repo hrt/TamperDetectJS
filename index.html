@@ -238,13 +238,23 @@
 			}
 			return true;
 		},
-		function check_stack_16_ArrayBuffer() {
+		function check_stack_16_ArrayBuffer_slice() {
 			try {
 				ArrayBuffer.prototype.slice(Array.prototype.join);
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
 				return !stack.includes("incompatible receiver #<ArrayBuffer>");	
+			}
+			return true;
+		},
+		function check_stack_17_BigUint64Array_slice() {
+			try {
+				BigUint64Array.prototype.slice.apply(Array.prototype.join);
+			} catch(e) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return !stack.includes(sig_join);	
 			}
 			return true;
 		}

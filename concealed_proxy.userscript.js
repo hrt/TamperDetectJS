@@ -1,64 +1,72 @@
 // ==UserScript==
 // @name         Proxy hide solution
-// @namespace    http://tampermonkey.net/
-// @version      0.1
-// @description  try to take over the world!
-// @author       https://hrt.github.io/TamperDetectJS/
-// @match        *://*/*
-// @grant        none
+// @match        https://hrt.github.io/TamperDetectJS/
 // @run-at       document-start
 // ==/UserScript==
 
 (function() {
     Error.prepareStackTrace = function(error, structuredStackTrace) {
-        return error.stack
-                          .replace(/.*Object\.apply.*\n/g, '')
+        return error.stack.replace(/.*Object\.apply.*\n/g, '')
                           .replace(/(.*)Proxy\.(.*)/g, '$1Function.$2')
+                          .replace(/(.*)Object\.(.*)/g, '$1Function.$2');
     };
-
-    var redirections = new WeakMap();
-
-    const Array_join = Array.prototype.join;
-    Array.prototype.join = new Proxy(Array_join, {
-        apply: function(target, _this, _arguments) {
-            return Array_join.apply(_this, _arguments);
-    }});
-    redirections.set(Array.prototype.join, Array_join);
-
-    function conceal(parent, key) {
+    var proxy_to_og = new WeakMap();
+    function hook(parent, key, replace) {
+        // replace is optional, if true then proxied this/arguments will be replaced with original
         try {
             const og = parent[key];
-            if (redirections.get(parent[key])) {
-                // parent[key] is already a proxy
-                return;
+            if (proxy_to_og.get(og)) {
+                return; // we're already a proxy
             }
             parent[key] = new Proxy(og, {
-                apply: function(target, _this, _arguments) {
-                    var original_fn = redirections.get(_this);
-                    if (original_fn) {
-                        _this = original_fn;
+                apply: function(target, that, args) {
+                    if (replace) {
+                        var new_args = [];
+                        that = proxy_to_og.get(that) || that;
+                        for (var i = 0; args && i < args.length; i++) {
+                            new_args[i] = proxy_to_og.get(args[i]) || args[i];
+                        }
+                        args = new_args;
                     }
-                    return og.apply(_this, _arguments);
+                    try {
+                        return og.apply(that, args);
+                    } catch (e) {
+                        if (!replace) {
+                            var new_args = [];
+                            that = proxy_to_og.get(that) || that;
+                            for (var i = 0; args && i < args.length; i++) {
+                                new_args[i] = proxy_to_og.get(args[i]) || args[i];
+                            }
+                            args = new_args;
+                            return og.apply(that, args);
+                        } else {
+                            throw e;
+                        }
+                    }
                 }
             })
-            redirections.set(parent[key], og);
-        } catch(e) {
-
-        }
+            proxy_to_og.set(parent[key], og);
+        } catch(e) {}
     };
     var descriptors = Object.getOwnPropertyDescriptors(window);
     for (var key in descriptors) {
         try {
-            conceal(window[key].prototype, 'sort'); // not viable to find each case
-            conceal(window[key].prototype, 'slice');
-            conceal(window[key].prototype, 'toString');
-            conceal(window[key].prototype, 'toLocaleString');
-            conceal(window[key].prototype, 'toDateString');
-            conceal(window[key].prototype, 'toLocaleDateString');
-            conceal(window[key].prototype, 'toLocaleTimeString');
-        } catch(e) {
-
-        }
+            var prototype = window[key].prototype;
+            // find these with the some code
+            hook(prototype, 'concat');
+            hook(prototype, 'push');
+            hook(prototype, 'join');
+            hook(prototype, 'sort');
+            hook(prototype, 'slice');
+            hook(prototype, 'shift');
+            hook(prototype, 'unshift');
+            hook(prototype, 'splice');
+            hook(prototype, 'toString', true);
+            hook(prototype, 'toLocaleString', true);
+            hook(prototype, 'toDateString', true);
+            hook(prototype, 'toLocaleDateString', true);
+            hook(prototype, 'toLocaleTimeString', true);
+        } catch(e) {}
     }
 
 })();

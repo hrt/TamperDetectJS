@@ -52,13 +52,18 @@
 			// from Lemons#0001 https://github.com/Lemons1337/
 			return "prototype" in Array.prototype.join;
 		},
-		function sanity_check() {
+		function check_sanity_1() {
 			try {
 				return ['1', 2, {'toString': () => '3'}].join(',') !== '1,2,3';
 			} catch(e) {
 				return true;
 			}
 			return false;
+		},
+		function check_sanity_2() {
+			var a = [];
+			a.push(Array.prototype.join);
+			return a[0] !== Array.prototype.join;
 		},
 		function check_stack_1() {
 			// detect proxy since they will have to call the actual function -> increased stack trace lines
@@ -267,7 +272,7 @@
 				return !stack.includes(sig_join);	
 			}
 			return true;
-		}
+		},
 	];
 
 	// wait for cheats to load

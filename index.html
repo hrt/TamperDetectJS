@@ -273,6 +273,16 @@
 			}
 			return true;
 		},
+		function check_stack_19_proxy() {
+			try {
+				new Proxy(Object,{}) in 0
+			} catch(e) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return !stack.includes('[object Function]');
+			}
+			return true;
+		}
 	];
 
 	// wait for cheats to load

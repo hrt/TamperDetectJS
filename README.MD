@@ -27,3 +27,5 @@ One is a simple proxy that gets detected. The other attempts to conceal the prox
 ---
 
 Big thonks to [Lemons1337](https://github.com/lemons1337) for chipping in.
+
+Note: This is meant only for chromium based browsers. You will get false detections on others.

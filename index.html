@@ -302,6 +302,12 @@
 			}
 			return true;
 		},
+		function check_name() {
+			return Array.prototype.name !== 'join';
+		},
+		function check_length() {
+			return Array.prototype.length !== 1;
+		},
 		function check_apply() {
 			var apply = Function.prototype.apply;
 			Function.prototype.apply = _=>_ ;

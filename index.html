@@ -296,7 +296,9 @@
 				Array.prototype.join in 0;
 			} catch(e) {
 				// from Lemons#0001 https://github.com/Lemons1337/
-				return !(e + '').includes(sig_join);
+				var message = (e + '');
+				console.log('%s\n----\n%s', arguments.callee.name, message);
+				return !message.includes(sig_join);
 			}
 			return true;
 		},

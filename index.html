@@ -1,408 +1,118 @@
-<html>
-<head>
-<script>
-	const original_join = Array.prototype.join;
-	const sig_toString = "function toString() { [native code] }";
-	const sig_toDateString = "function toDateString() { [native code] }";
-	const sig_join = "function join() { [native code] }";
-	console.warn('loaded detector');
+// ==UserScript==
+// @name         Tamper conceal solution
+// @match        file:///home/gecko/TamperDetectJS/index.html
+// @run-at       document-start
+// @grant        none
+// ==/UserScript==
 
-	// detections return true if something was detected
-	var detections = [
-		function check_modification() {
-			return Array.prototype.join !== original_join;
-		},
-		function check_toString_1() {
-			return Array.prototype.join.toString() !== sig_join;
-		},
-		function check_toString_2() {
-			return Function.prototype.toString.apply(Array.prototype.join, []) !== sig_join;
-		},
-		function check_toString_3() {
-			return Function.prototype.toString.apply(Array.prototype.join.toString) !== sig_toString;
-		},
-		function check_toString_4() {
-			return Object.getOwnPropertyDescriptor(Array.prototype.join, 'toString') !== undefined; // toString shouldn't be manually defined
-		},
-		function check_toString_5() {
-			return Array.prototype.join.toString.toString() !== sig_toString;
-		},
-		function check_toString_6() {
-			return Array.prototype.join.toString.name.includes('bind'); // if toString was manually defined by .bind
-		},
-		function check_toString_7() {
-			return Date.prototype.toString.toString() !== sig_toString;
-		},
-		function check_toString_8() {
-			return Function.prototype.toString.apply(Date.prototype.toString) !== sig_toString;
-		},
-		function check_arguments_1() {
-			// make sure this is thrown
-			try {
-				Array.prototype.join.arguments;
-			} catch(e) {
-				return false;
-			}
-			return true;
-		},
-		function check_arguments_2() {
-			return Object.getOwnPropertyDescriptor(Array.prototype.join, 'arguments') !== undefined;
-		},
-		function check_prototype() {
-			// from Lemons#0001 https://github.com/Lemons1337/
-			return "prototype" in Array.prototype.join;
-		},
-		function check_sanity_1() {
-			try {
-				return ['1', 2, {'toString': () => '3'}].join(',') !== '1,2,3';
-			} catch(e) {
-				return true;
-			}
-			return false;
-		},
-		function check_sanity_2() {
-			var a = [];
-			a.push(Array.prototype.join);
-			return a[0] !== Array.prototype.join;
-		},
-		function check_sanity_3() {
-			try {
-				Array.prototype.join.apply(window);
-			} catch(e) {
-				return true;
-			}
-			return false;
-		},
-		function check_stack_1() {
-			// detect proxy since they will have to call the actual function -> increased stack trace lines
-			Error.stackTraceLimit = 10;
-			try {
-				Array.prototype.join.apply();
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return stack.split('\n').length !== 4; // a tailored stack trace check
-			}
-			return true;
-		},
-		function check_stack_2() {
-			// join and many other functions will implicitly call toString on arguments so rig toString to inspect the stack for increased size
-			// this is one of the harder detection vectors for an adversary to truly fix since they cannot intercept the exception in this case
-			// consider concealing the rigged 'toString'
-			// worth noting that there exists a way to modify the full stack trace to anything without catching/throwing: https://github.com/hrt/StackTraceSpoofJS
-			var arr = [
-				{
-					'toString': () => {
-						Error.stackTraceLimit = 10;
-						try {
-							null.test
-						} catch(e) {
-							const stack = e.stack;
-							console.log('%s\n----\n%s', arguments.callee.name, stack);
-							if (stack.split('\n').length !== 5) {
-								return 'DETECTED';
-							}
-						}
-						return '';
-					}
-				}
-			];
-			return arr.join() === 'DETECTED';
-		},
-		function check_stack_3() {
-			Error.stackTraceLimit = 10;
-			try {
-				Date.prototype.toString.apply(Array.prototype.join, []);
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_join);
-			}
-			return true;
-		},
-		function check_stack_4_toString() {
-			Error.stackTraceLimit = 10;
-			try {
-				Date.prototype.toString.apply(Array.prototype.join.toString, []);
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes(sig_toString)
-			}
-			return true;
-		},
-		function check_stack_5_toString() {
-			Error.stackTraceLimit = 10;
-			try {
-				Date.prototype.toDateString.apply(Array.prototype.join.toString, []);
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes(sig_toString);
-			}
-			return true;
-		},
-		function check_stack_6() {
-			Error.stackTraceLimit = 10;
-			try {
-				Date.prototype.toDateString.apply(Array.prototype.join, []);
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_join);
-			}
-			return true;
-		},
-		function check_stack_7_toString() {
-			Error.stackTraceLimit = 10;
-			try {
-				Date.prototype.toString.apply(Function.prototype.toString);
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toString);
-			}
-			return true;
-		},
-		function check_stack_8_toString() {
-			Error.stackTraceLimit = 10;
-			try {
-				Date.prototype.toDateString.apply(Function.prototype.toString);
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toString);
-			}
-			return true;
-		},
-		function check_stack_9_toString() {
-			Error.stackTraceLimit = 10;
-			try {
-				Date.prototype.toDateString.apply(Date.prototype.toString);
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toString);
-			}
-			return true;
-		},
-		function check_stack_10_toString() {
-			Error.stackTraceLimit = 10;
-			try {
-				Date.prototype.toString.apply(Date.prototype.toDateString);
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return stack.includes('Proxy.toString') || stack.includes('apply') || !stack.includes(sig_toDateString);
-			}
-			return true;
-		},
-		function check_stack_11_object_create() {
-			// from Lemons#0001 https://github.com/Lemons1337/
-			try {
-				Object.create(Array.prototype.join).toString();
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return stack.includes('at Object.toString (<anonymous>)');
-			}
-			return true;
-		},
-		function check_stack_12_in() {
-			// from Lemons#0001 https://github.com/Lemons1337/
-			try {
-				Array.prototype.join in 0;
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes(sig_join);
-			}
-			return true;
-		},
-		function check_stack_13_toString_in() {
-			// from Lemons#0001 https://github.com/Lemons1337/
-			try {
-				Array.prototype.join.toString in 0;
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes(sig_toString);
-			}
-			return true;
-		},
-		function check_stack_14_toLocaleDateString() {
-			// from Lemons#0001 https://github.com/Lemons1337/
-			try {
-				Date.prototype.toLocaleDateString.call(Array.prototype.join);
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes(sig_join);	
-			}
-			return true;
-		},
-		function check_stack_15_toLocaleDateString() {
-			try {
-				Date.prototype.toLocaleDateString.call(Array.prototype.join);
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes(sig_join);	
-			}
-			return true;
-		},
-		function check_stack_16_ArrayBuffer() {
-			try {
-				ArrayBuffer.prototype in 0;
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes("#<ArrayBuffer>");	
-			}
-			return true;
-		},
-		function check_stack_17_BigUint64Array_slice() {
-			try {
-				BigUint64Array.prototype.slice.apply(Array.prototype.join);
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes(sig_join);	
-			}
-			return true;
-		},
-		function check_stack_18_BigUint64Array_sort() {
-			try {
-				BigUint64Array.prototype.sort.apply(Array.prototype.join);
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes(sig_join);	
-			}
-			return true;
-		},
-		function check_stack_19_proxy() {
-			try {
-				new Proxy(Object,{}) in 0
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes('[object Function]');
-			}
-			return true;
-		},
-		function check_error_1() {
-			try {
-				Array.prototype.join in 0;
-			} catch(e) {
-				// from Lemons#0001 https://github.com/Lemons1337/
-				var message = (e + '');
-				console.log('%s\n----\n%s', arguments.callee.name, message);
-				return !message.includes(sig_join);
-			}
-			return true;
-		},
-		function check_error_2() {
-			try {
-				postMessage(Array.prototype.join);
-			} catch(e) {
-				// from Lemons#0001 https://github.com/Lemons1337/
-				var message = (e + '');
-				console.log('%s\n----\n%s', arguments.callee.name, message);
-				return !message.includes(sig_join);
-			}
-			return true;
-		},
-		function check_error_3() {
-			try {
-				history.pushState(Array.prototype.join, 1)
-			} catch(e) {
-				// from Lemons#0001 https://github.com/Lemons1337/
-				var message = (e + '');
-				console.log('%s\n----\n%s', arguments.callee.name, message);
-				return !message.includes(sig_join);
-			}
-			return true;
-		},
-		function check_name() {
-			return Array.prototype.join.name !== 'join';
-		},
-		function check_length() {
-			return Array.prototype.join.length !== 1;
-		},
-		function check_apply() {
-			var apply = Function.prototype.apply;
-			Function.prototype.apply = _=>_ ;
-			var detected = Array.prototype.join([], []) !== '';
-			Function.prototype.apply = apply
-			return detected;
-		}
-	];
+(() => {
+    var hook_to_og = new WeakMap();
+    // more of these to do, but that's sleeper - can do it later
+    var apply = Function.prototype.apply;
+    var toString = Function.prototype.toString;
+    function clean(trace) {
+        var matches = trace.match(/\(\.\.\.args\) \=\>[\s|\S]*\.\.\.<omitted>\.\.\. \}/);
+        if (matches) {
+            var rep = matches[0];
+            matches = rep.match(/\/\*(\w+\.\w+\.\w+)\*\//);
+            if (matches && matches.length == 2) {
+                var keys = matches[1].split('.');
+                var og = hook_to_og.get(window[keys[0]][keys[1]][keys[2]]);
+                const tmp = Function.prototype.toString;
+                Function.prototype.toString = toString;
+                trace = trace.replace(rep, og.toString());
+                Function.prototype.toString = tmp;
+            }
+        }
+        return trace;
+    }
+    // Error is yet to be hidden (incl delete proof and preserve behavior..)
+    Error.prepareStackTrace = function(error, structuredStackTrace) {
+        var stack = clean(error.stack);
+        return stack.replace(/.*chrome-extension.*\n/g, '');
+    };
+    Reflect.defineProperty(TypeError.prototype, 'name', {
+        get: function() {
+            this.message = clean(this.message);
+            return 'TypeError';
+        }
+    });
+    function hook(parent_name, key, is_prototype, replace_all) {
+        try {
+            var parent = is_prototype ? window[parent_name].prototype : window[parent_name];
+            var og = parent[key]
+            if (!og) {
+                return;
+            }
+            if (hook_to_og.get(parent[key])) {
+                return; // we're already hooked
+            }
+            parent[key] = eval(`
+                (...args) => {/*` + [parent_name, 'prototype', key].join('.') + `*/
+                    var prepareStackTrace = Error.prepareStackTrace;
+                    Error.prepareStackTrace = function(error, structuredStackTrace) {
+                        return structuredStackTrace[0].getThis();
+                    };
+                    try {
+                        null.test;
+                    } catch(e) {
+                        that = e.stack;
+                    }
+                    if (that === window) {
+                        // this is a hack and fails edge case .join on window
+                        // I'm yet to think of a clean way to figure out if 'this' is null..
+                        that = undefined;
+                    }
+                    delete Error.prepareStackTrace;
+                    Error.prepareStackTrace = prepareStackTrace;
 
-	// wait for cheats to load
-	setTimeout(() => { 
-		var ul = document.getElementById('detections');
-		var hits = 0;
-		function add_detection(msg) {
-			console.warn(msg);
-			var li = document.createElement("LI");
-			li.append(document.createTextNode(msg));
-			li.classList.add('fail');
-			ul.appendChild(li);
-			hits += 1;
-		}
-		for (var i = 0; i < detections.length; i++) {
-			var detected = true;
-			try {
-				var detected = detections[i]();
-			} catch(e) {}
-			if (detected) {
-				var msg = 'DETECTED: ' + detections[i].name;
-				add_detection(msg);
-			}
-		}
-		var check_list = [["Object","prototype","constructor"],["Object","prototype","__defineGetter__"],["Object","prototype","__defineSetter__"],["Object","prototype","hasOwnProperty"],["Object","prototype","__lookupGetter__"],["Object","prototype","__lookupSetter__"],["Object","prototype","isPrototypeOf"],["Object","prototype","propertyIsEnumerable"],["Object","prototype","toString"],["Object","prototype","valueOf"],["Array","prototype","constructor"],["Array","prototype","concat"],["Array","prototype","copyWithin"],["Array","prototype","fill"],["Array","prototype","find"],["Array","prototype","findIndex"],["Array","prototype","lastIndexOf"],["Array","prototype","pop"],["Array","prototype","push"],["Array","prototype","reverse"],["Array","prototype","shift"],["Array","prototype","unshift"],["Array","prototype","slice"],["Array","prototype","sort"],["Array","prototype","splice"],["Array","prototype","includes"],["Array","prototype","indexOf"],["Array","prototype","join"],["Array","prototype","keys"],["Array","prototype","entries"],["Array","prototype","values"],["Array","prototype","forEach"],["Array","prototype","filter"],["Array","prototype","flat"],["Array","prototype","flatMap"],["Array","prototype","map"],["Array","prototype","every"],["Array","prototype","some"],["Array","prototype","reduce"],["Array","prototype","reduceRight"],["Array","prototype","toLocaleString"],["Array","prototype","toString"],["Number","prototype","constructor"],["Number","prototype","toExponential"],["Number","prototype","toFixed"],["Number","prototype","toPrecision"],["Number","prototype","toString"],["Number","prototype","valueOf"],["Number","prototype","toLocaleString"],["Boolean","prototype","constructor"],["Boolean","prototype","toString"],["Boolean","prototype","valueOf"],["String","prototype","constructor"],["String","prototype","anchor"],["String","prototype","big"],["String","prototype","blink"],["String","prototype","bold"],["String","prototype","charAt"],["String","prototype","charCodeAt"],["String","prototype","codePointAt"],["String","prototype","concat"],["String","prototype","endsWith"],["String","prototype","fontcolor"],["String","prototype","fontsize"],["String","prototype","fixed"],["String","prototype","includes"],["String","prototype","indexOf"],["String","prototype","italics"],["String","prototype","lastIndexOf"],["String","prototype","link"],["String","prototype","localeCompare"],["String","prototype","match"],["String","prototype","matchAll"],["String","prototype","normalize"],["String","prototype","padEnd"],["String","prototype","padStart"],["String","prototype","repeat"],["String","prototype","replace"],["String","prototype","search"],["String","prototype","slice"],["String","prototype","small"],["String","prototype","split"],["String","prototype","strike"],["String","prototype","sub"],["String","prototype","substr"],["String","prototype","substring"],["String","prototype","sup"],["String","prototype","startsWith"],["String","prototype","toString"],["String","prototype","trim"],["String","prototype","trimStart"],["String","prototype","trimLeft"],["String","prototype","trimEnd"],["String","prototype","trimRight"],["String","prototype","toLocaleLowerCase"],["String","prototype","toLocaleUpperCase"],["String","prototype","toLowerCase"],["String","prototype","toUpperCase"],["String","prototype","valueOf"],["Symbol","prototype","constructor"],["Symbol","prototype","toString"],["Symbol","prototype","valueOf"],["Date","prototype","constructor"],["Date","prototype","toString"],["Date","prototype","toDateString"],["Date","prototype","toTimeString"],["Date","prototype","toISOString"],["Date","prototype","toUTCString"],["Date","prototype","toGMTString"],["Date","prototype","getDate"],["Date","prototype","setDate"],["Date","prototype","getDay"],["Date","prototype","getFullYear"],["Date","prototype","setFullYear"],["Date","prototype","getHours"],["Date","prototype","setHours"],["Date","prototype","getMilliseconds"],["Date","prototype","setMilliseconds"],["Date","prototype","getMinutes"],["Date","prototype","setMinutes"],["Date","prototype","getMonth"],["Date","prototype","setMonth"],["Date","prototype","getSeconds"],["Date","prototype","setSeconds"],["Date","prototype","getTime"],["Date","prototype","setTime"],["Date","prototype","getTimezoneOffset"],["Date","prototype","getUTCDate"],["Date","prototype","setUTCDate"],["Date","prototype","getUTCDay"],["Date","prototype","getUTCFullYear"],["Date","prototype","setUTCFullYear"],["Date","prototype","getUTCHours"],["Date","prototype","setUTCHours"],["Date","prototype","getUTCMilliseconds"],["Date","prototype","setUTCMilliseconds"],["Date","prototype","getUTCMinutes"],["Date","prototype","setUTCMinutes"],["Date","prototype","getUTCMonth"],["Date","prototype","setUTCMonth"],["Date","prototype","getUTCSeconds"],["Date","prototype","setUTCSeconds"],["Date","prototype","valueOf"],["Date","prototype","getYear"],["Date","prototype","setYear"],["Date","prototype","toJSON"],["Date","prototype","toLocaleString"],["Date","prototype","toLocaleDateString"],["Date","prototype","toLocaleTimeString"],["Promise","prototype","constructor"],["Promise","prototype","then"],["Promise","prototype","catch"],["Promise","prototype","finally"],["RegExp","prototype","constructor"],["RegExp","prototype","exec"],["Error","prototype","constructor"],["Error","prototype","toString"],["EvalError","prototype","constructor"],["RangeError","prototype","constructor"],["ReferenceError","prototype","constructor"],["SyntaxError","prototype","constructor"],["TypeError","prototype","constructor"],["URIError","prototype","constructor"],["ArrayBuffer","prototype","constructor"],["Uint8Array","prototype","constructor"],["Int8Array","prototype","constructor"],["Uint16Array","prototype","constructor"],["Int16Array","prototype","constructor"],["Uint32Array","prototype","constructor"],["Int32Array","prototype","constructor"],["Float32Array","prototype","constructor"],["Float64Array","prototype","constructor"],["Uint8ClampedArray","prototype","constructor"],["BigUint64Array","prototype","constructor"],["BigInt64Array","prototype","constructor"],["DataView","prototype","constructor"],["Map","prototype","constructor"],["Map","prototype","get"],["Map","prototype","set"],["Map","prototype","has"],["Map","prototype","delete"],["Map","prototype","clear"],["Map","prototype","entries"],["Map","prototype","forEach"],["Map","prototype","keys"],["BigInt","prototype","constructor"],["BigInt","prototype","toLocaleString"],["BigInt","prototype","toString"],["BigInt","prototype","valueOf"],["Set","prototype","constructor"],["Set","prototype","has"],["Set","prototype","add"],["Set","prototype","delete"],["Set","prototype","clear"],["Set","prototype","entries"],["Set","prototype","forEach"],["WeakMap","prototype","constructor"],["WeakMap","prototype","delete"],["WeakMap","prototype","get"],["WeakMap","prototype","set"],["WeakMap","prototype","has"],["WeakSet","prototype","constructor"],["WeakSet","prototype","delete"],["WeakSet","prototype","has"],["WeakSet","prototype","add"],["WebGLVertexArrayObject","prototype","constructor"],["WebGLUniformLocation","prototype","constructor"],["WebGLTransformFeedback","prototype","constructor"],["WebGLTexture","prototype","constructor"],["WebGLSync","prototype","constructor"],["WebGLShader","prototype","constructor"],["WebGLSampler","prototype","constructor"],["WebGLRenderbuffer","prototype","constructor"],["WebGLQuery","prototype","constructor"],["WebGLProgram","prototype","constructor"],["WebGLFramebuffer","prototype","constructor"],["WebGLBuffer","prototype","constructor"],["SyncManager","prototype","register"],["SyncManager","prototype","getTags"],["SyncManager","prototype","constructor"],["PeriodicWave","prototype","constructor"],["Path2D","prototype","addPath"],["Path2D","prototype","closePath"],["Path2D","prototype","moveTo"],["Path2D","prototype","lineTo"],["Path2D","prototype","quadraticCurveTo"],["Path2D","prototype","bezierCurveTo"],["Path2D","prototype","arcTo"],["Path2D","prototype","rect"],["Path2D","prototype","arc"],["Path2D","prototype","ellipse"],["Path2D","prototype","constructor"],["MediaCapabilities","prototype","decodingInfo"],["MediaCapabilities","prototype","constructor"],["InputDeviceInfo","prototype","getCapabilities"],["InputDeviceInfo","prototype","constructor"],["IIRFilterNode","prototype","getFrequencyResponse"],["IIRFilterNode","prototype","constructor"],["IDBFactory","prototype","open"],["IDBFactory","prototype","deleteDatabase"],["IDBFactory","prototype","cmp"],["IDBFactory","prototype","databases"],["IDBFactory","prototype","constructor"],["Geolocation","prototype","getCurrentPosition"],["Geolocation","prototype","watchPosition"],["Geolocation","prototype","clearWatch"],["Geolocation","prototype","constructor"],["Crypto","prototype","getRandomValues"],["Crypto","prototype","constructor"],["ChannelSplitterNode","prototype","constructor"],["ChannelMergerNode","prototype","constructor"],["CanvasPattern","prototype","setTransform"],["CanvasPattern","prototype","constructor"],["CanvasGradient","prototype","addColorStop"],["CanvasGradient","prototype","constructor"],["XPathExpression","prototype","evaluate"],["XPathExpression","prototype","constructor"],["XPathEvaluator","prototype","createExpression"],["XPathEvaluator","prototype","createNSResolver"],["XPathEvaluator","prototype","evaluate"],["XPathEvaluator","prototype","constructor"],["XMLSerializer","prototype","serializeToString"],["XMLSerializer","prototype","constructor"],["XMLHttpRequestUpload","prototype","constructor"],["XMLDocument","prototype","constructor"],["Window","prototype","constructor"],["URLSearchParams","prototype","append"],["URLSearchParams","prototype","delete"],["URLSearchParams","prototype","get"],["URLSearchParams","prototype","getAll"],["URLSearchParams","prototype","has"],["URLSearchParams","prototype","set"],["URLSearchParams","prototype","sort"],["URLSearchParams","prototype","keys"],["URLSearchParams","prototype","values"],["URLSearchParams","prototype","forEach"],["URLSearchParams","prototype","toString"],["URLSearchParams","prototype","entries"],["URLSearchParams","prototype","constructor"],["StylePropertyMap","prototype","set"],["StylePropertyMap","prototype","append"],["StylePropertyMap","prototype","delete"],["StylePropertyMap","prototype","clear"],["StylePropertyMap","prototype","constructor"],["SVGUnitTypes","prototype","constructor"],["SVGTitleElement","prototype","constructor"],["SVGTextElement","prototype","constructor"],["SVGTSpanElement","prototype","constructor"],["SVGSwitchElement","prototype","constructor"],["SVGSetElement","prototype","constructor"],["SVGPathElement","prototype","constructor"],["SVGMetadataElement","prototype","constructor"],["SVGGElement","prototype","constructor"],["SVGFEFuncRElement","prototype","constructor"],["SVGFEFuncGElement","prototype","constructor"],["SVGFEFuncBElement","prototype","constructor"],["SVGFEFuncAElement","prototype","constructor"],["SVGDescElement","prototype","constructor"],["SVGDefsElement","prototype","constructor"],["SVGAnimateTransformElement","prototype","constructor"],["SVGAnimateMotionElement","prototype","constructor"],["SVGAnimateElement","prototype","constructor"],["ResizeObserver","prototype","observe"],["ResizeObserver","prototype","unobserve"],["ResizeObserver","prototype","disconnect"],["ResizeObserver","prototype","constructor"],["ReportingObserver","prototype","observe"],["ReportingObserver","prototype","disconnect"],["ReportingObserver","prototype","takeRecords"],["ReportingObserver","prototype","constructor"],["ReadableStreamDefaultReader","prototype","cancel"],["ReadableStreamDefaultReader","prototype","read"],["ReadableStreamDefaultReader","prototype","releaseLock"],["ReadableStreamDefaultReader","prototype","constructor"],["PerformancePaintTiming","prototype","constructor"],["PerformanceObserverEntryList","prototype","getEntries"],["PerformanceObserverEntryList","prototype","getEntriesByType"],["PerformanceObserverEntryList","prototype","getEntriesByName"],["PerformanceObserverEntryList","prototype","constructor"],["PerformanceObserver","prototype","observe"],["PerformanceObserver","prototype","disconnect"],["PerformanceObserver","prototype","takeRecords"],["PerformanceObserver","prototype","constructor"],["MutationObserver","prototype","observe"],["MutationObserver","prototype","disconnect"],["MutationObserver","prototype","takeRecords"],["MutationObserver","prototype","constructor"],["Location","prototype","constructor"],["Headers","prototype","append"],["Headers","prototype","delete"],["Headers","prototype","get"],["Headers","prototype","has"],["Headers","prototype","set"],["Headers","prototype","keys"],["Headers","prototype","values"],["Headers","prototype","forEach"],["Headers","prototype","entries"],["Headers","prototype","constructor"],["HTMLUnknownElement","prototype","constructor"],["HTMLSpanElement","prototype","constructor"],["HTMLShadowElement","prototype","getDistributedNodes"],["HTMLShadowElement","prototype","constructor"],["HTMLPictureElement","prototype","constructor"],["HTMLHeadElement","prototype","constructor"],["HTMLFormControlsCollection","prototype","namedItem"],["HTMLFormControlsCollection","prototype","constructor"],["HTMLDocument","prototype","constructor"],["Audio","prototype","constructor"],["HTMLAudioElement","prototype","constructor"],["FormData","prototype","append"],["FormData","prototype","delete"],["FormData","prototype","get"],["FormData","prototype","getAll"],["FormData","prototype","has"],["FormData","prototype","set"],["FormData","prototype","keys"],["FormData","prototype","values"],["FormData","prototype","forEach"],["FormData","prototype","entries"],["FormData","prototype","constructor"],["External","prototype","AddSearchProvider"],["External","prototype","IsSearchProviderInstalled"],["External","prototype","constructor"],["EventTarget","prototype","addEventListener"],["EventTarget","prototype","removeEventListener"],["EventTarget","prototype","dispatchEvent"],["EventTarget","prototype","constructor"],["DOMStringMap","prototype","constructor"],["DOMParser","prototype","parseFromString"],["DOMParser","prototype","constructor"],["DOMImplementation","prototype","createDocumentType"],["DOMImplementation","prototype","createDocument"],["DOMImplementation","prototype","createHTMLDocument"],["DOMImplementation","prototype","hasFeature"],["DOMImplementation","prototype","constructor"],["CustomElementRegistry","prototype","define"],["CustomElementRegistry","prototype","get"],["CustomElementRegistry","prototype","whenDefined"],["CustomElementRegistry","prototype","upgrade"],["CustomElementRegistry","prototype","constructor"],["Comment","prototype","constructor"],["CSSSupportsRule","prototype","constructor"],["CSSStyleValue","prototype","toString"],["CSSStyleValue","prototype","constructor"],["CSSNumericValue","prototype","add"],["CSSNumericValue","prototype","sub"],["CSSNumericValue","prototype","mul"],["CSSNumericValue","prototype","div"],["CSSNumericValue","prototype","min"],["CSSNumericValue","prototype","max"],["CSSNumericValue","prototype","equals"],["CSSNumericValue","prototype","to"],["CSSNumericValue","prototype","toSum"],["CSSNumericValue","prototype","type"],["CSSNumericValue","prototype","constructor"],["CSSImageValue","prototype","constructor"],["CSS","prototype","constructor"],["CDATASection","prototype","constructor"],["AnimationEffect","prototype","getTiming"],["AnimationEffect","prototype","getComputedTiming"],["AnimationEffect","prototype","updateTiming"],["AnimationEffect","prototype","constructor"],["WebKitMutationObserver","prototype","observe"],["WebKitMutationObserver","prototype","disconnect"],["WebKitMutationObserver","prototype","takeRecords"],["WebKitMutationObserver","prototype","constructor"],["SharedArrayBuffer","prototype","constructor"],["FinalizationRegistry","prototype","constructor"],["FinalizationRegistry","prototype","register"],["FinalizationRegistry","prototype","unregister"],["WeakRef","prototype","constructor"],["WeakRef","prototype","deref"],["FragmentDirective","prototype","constructor"],["ApplicationCache","prototype","constructor"],["ApplicationCacheErrorEvent","prototype","constructor"],["WakeLock","prototype","constructor"],["WakeLock","prototype","request"],["WakeLockSentinel","prototype","constructor"],["FeaturePolicy","prototype","allowsFeature"],["FeaturePolicy","prototype","features"],["FeaturePolicy","prototype","allowedFeatures"],["FeaturePolicy","prototype","getAllowlistForFeature"],["FeaturePolicy","prototype","constructor"],["TrustedHTML","prototype","toString"],["TrustedHTML","prototype","constructor"],["TrustedScript","prototype","toString"],["TrustedScript","prototype","constructor"],["TrustedScriptURL","prototype","toString"],["TrustedScriptURL","prototype","constructor"],["DocumentTimeline","prototype","constructor"],["XSLTProcessor","prototype","importStylesheet"],["XSLTProcessor","prototype","transformToFragment"],["XSLTProcessor","prototype","transformToDocument"],["XSLTProcessor","prototype","setParameter"],["XSLTProcessor","prototype","getParameter"],["XSLTProcessor","prototype","removeParameter"],["XSLTProcessor","prototype","clearParameters"],["XSLTProcessor","prototype","reset"],["XSLTProcessor","prototype","constructor"],["BackgroundFetchManager","prototype","fetch"],["BackgroundFetchManager","prototype","get"],["BackgroundFetchManager","prototype","getIds"],["BackgroundFetchManager","prototype","constructor"],["PaymentInstruments","prototype","delete"],["PaymentInstruments","prototype","get"],["PaymentInstruments","prototype","keys"],["PaymentInstruments","prototype","has"],["PaymentInstruments","prototype","set"],["PaymentInstruments","prototype","clear"],["PaymentInstruments","prototype","constructor"],["PaymentRequestUpdateEvent","prototype","updateWith"],["PaymentRequestUpdateEvent","prototype","constructor"],["PeriodicSyncManager","prototype","register"],["PeriodicSyncManager","prototype","getTags"],["PeriodicSyncManager","prototype","unregister"],["PeriodicSyncManager","prototype","constructor"],["Permissions","prototype","query"],["Permissions","prototype","constructor"],["PushManager","prototype","subscribe"],["PushManager","prototype","getSubscription"],["PushManager","prototype","permissionState"],["PushManager","prototype","constructor"],["Worklet","prototype","constructor"],["Worklet","prototype","addModule"],["AbsoluteOrientationSensor","prototype","constructor"],["Accelerometer","prototype","constructor"],["AudioWorklet","prototype","constructor"],["Cache","prototype","constructor"],["Cache","prototype","match"],["Cache","prototype","matchAll"],["Cache","prototype","add"],["Cache","prototype","addAll"],["Cache","prototype","put"],["Cache","prototype","delete"],["Cache","prototype","keys"],["CacheStorage","prototype","constructor"],["CacheStorage","prototype","match"],["CacheStorage","prototype","has"],["CacheStorage","prototype","open"],["CacheStorage","prototype","delete"],["CacheStorage","prototype","keys"],["Clipboard","prototype","constructor"],["Clipboard","prototype","read"],["Clipboard","prototype","readText"],["Clipboard","prototype","write"],["Clipboard","prototype","writeText"],["Credential","prototype","constructor"],["CredentialsContainer","prototype","constructor"],["CredentialsContainer","prototype","get"],["CredentialsContainer","prototype","store"],["CredentialsContainer","prototype","create"],["CredentialsContainer","prototype","preventSilentAccess"],["CryptoKey","prototype","constructor"],["DeviceMotionEvent","prototype","constructor"],["DeviceMotionEventAcceleration","prototype","constructor"],["DeviceMotionEventRotationRate","prototype","constructor"],["DeviceOrientationEvent","prototype","constructor"],["FederatedCredential","prototype","constructor"],["Gyroscope","prototype","constructor"],["Keyboard","prototype","constructor"],["Keyboard","prototype","lock"],["Keyboard","prototype","unlock"],["Keyboard","prototype","getLayoutMap"],["KeyboardLayoutMap","prototype","entries"],["KeyboardLayoutMap","prototype","constructor"],["LinearAccelerationSensor","prototype","constructor"],["Lock","prototype","constructor"],["LockManager","prototype","constructor"],["LockManager","prototype","request"],["LockManager","prototype","query"],["MediaDeviceInfo","prototype","constructor"],["MediaDevices","prototype","constructor"],["MediaKeyMessageEvent","prototype","constructor"],["MediaKeys","prototype","constructor"],["MediaKeys","prototype","createSession"],["MediaKeys","prototype","setServerCertificate"],["MediaKeys","prototype","getStatusForPolicy"],["MediaKeySession","prototype","constructor"],["MediaKeyStatusMap","prototype","entries"],["MediaKeyStatusMap","prototype","constructor"],["MediaKeySystemAccess","prototype","constructor"],["MIDIAccess","prototype","constructor"],["MIDIConnectionEvent","prototype","constructor"],["MIDIInput","prototype","constructor"],["MIDIInputMap","prototype","entries"],["MIDIInputMap","prototype","constructor"],["MIDIMessageEvent","prototype","constructor"],["MIDIOutput","prototype","constructor"],["MIDIOutput","prototype","send"],["MIDIOutputMap","prototype","entries"],["MIDIOutputMap","prototype","constructor"],["MIDIPort","prototype","constructor"],["NavigationPreloadManager","prototype","constructor"],["NavigationPreloadManager","prototype","enable"],["NavigationPreloadManager","prototype","disable"],["NavigationPreloadManager","prototype","setHeaderValue"],["NavigationPreloadManager","prototype","getState"],["OrientationSensor","prototype","constructor"],["PasswordCredential","prototype","constructor"],["RelativeOrientationSensor","prototype","constructor"],["RTCIceTransport","prototype","constructor"],["Sensor","prototype","constructor"],["SensorErrorEvent","prototype","constructor"],["ServiceWorker","prototype","constructor"],["ServiceWorkerContainer","prototype","constructor"],["ServiceWorkerRegistration","prototype","constructor"],["StorageManager","prototype","constructor"],["StorageManager","prototype","persisted"],["StorageManager","prototype","persist"],["StorageManager","prototype","estimate"],["SubtleCrypto","prototype","constructor"],["SubtleCrypto","prototype","encrypt"],["SubtleCrypto","prototype","decrypt"],["SubtleCrypto","prototype","sign"],["SubtleCrypto","prototype","verify"],["SubtleCrypto","prototype","digest"],["SubtleCrypto","prototype","generateKey"],["SubtleCrypto","prototype","deriveKey"],["SubtleCrypto","prototype","deriveBits"],["SubtleCrypto","prototype","importKey"],["SubtleCrypto","prototype","exportKey"],["SubtleCrypto","prototype","wrapKey"],["SubtleCrypto","prototype","unwrapKey"],["XRDOMOverlayState","prototype","constructor"],["XRLayer","prototype","constructor"],["BarcodeDetector","prototype","constructor"],["BarcodeDetector","prototype","detect"],["PaymentMethodChangeEvent","prototype","constructor"],["PaymentAddress","prototype","constructor"],["PaymentRequest","prototype","constructor"],["PaymentResponse","prototype","constructor"],["Presentation","prototype","constructor"],["PresentationAvailability","prototype","constructor"],["PresentationConnection","prototype","constructor"],["PresentationConnectionAvailableEvent","prototype","constructor"],["PresentationConnectionCloseEvent","prototype","constructor"],["PresentationConnectionList","prototype","constructor"],["PresentationReceiver","prototype","constructor"],["PresentationRequest","prototype","constructor"],["AuthenticatorAssertionResponse","prototype","constructor"],["AuthenticatorAttestationResponse","prototype","constructor"],["AuthenticatorResponse","prototype","constructor"],["PublicKeyCredential","prototype","constructor"],["USB","prototype","constructor"],["USBAlternateInterface","prototype","constructor"],["USBConfiguration","prototype","constructor"],["USBConnectionEvent","prototype","constructor"],["USBDevice","prototype","constructor"],["USBEndpoint","prototype","constructor"],["USBInterface","prototype","constructor"],["USBInTransferResult","prototype","constructor"],["USBIsochronousInTransferPacket","prototype","constructor"],["USBIsochronousInTransferResult","prototype","constructor"],["USBIsochronousOutTransferPacket","prototype","constructor"],["USBIsochronousOutTransferResult","prototype","constructor"],["USBOutTransferResult","prototype","constructor"],["XRBoundedReferenceSpace","prototype","constructor"],["XRFrame","prototype","constructor"],["XRInputSource","prototype","constructor"],["XRInputSourceArray","prototype","entries"],["XRInputSourceArray","prototype","forEach"],["XRInputSourceArray","prototype","keys"],["XRInputSourceArray","prototype","values"],["XRInputSourceArray","prototype","constructor"],["XRInputSourceEvent","prototype","constructor"],["XRInputSourcesChangeEvent","prototype","constructor"],["XRPose","prototype","constructor"],["XRReferenceSpace","prototype","constructor"],["XRReferenceSpaceEvent","prototype","constructor"],["XRRenderState","prototype","constructor"],["XRRigidTransform","prototype","constructor"],["XRSession","prototype","constructor"],["XRSessionEvent","prototype","constructor"],["XRSpace","prototype","constructor"],["XRSystem","prototype","constructor"],["XRView","prototype","constructor"],["XRViewerPose","prototype","constructor"],["XRViewport","prototype","constructor"],["XRWebGLLayer","prototype","constructor"],["XRHitTestResult","prototype","constructor"],["XRHitTestResult","prototype","getPose"],["XRHitTestSource","prototype","constructor"],["XRHitTestSource","prototype","cancel"],["XRRay","prototype","constructor"],["XRTransientInputHitTestResult","prototype","constructor"],["XRTransientInputHitTestSource","prototype","constructor"],["XRTransientInputHitTestSource","prototype","cancel"],["assert","prototype","constructor"],["assertNotReached","prototype","constructor"],["assertInstanceof","prototype","constructor"],["rgbComponentToHex","prototype","constructor"],["colorArrayToHex","prototype","constructor"],["LocalNTP","prototype","constructor"],["$","prototype","constructor"],["getChromeUILanguage","prototype","constructor"]]
-		for (var i = 0; i < check_list.length; i++) {
-			var nodes = check_list[i];
-			var ob = window;
-			try {
-				for (var j = 0; j < nodes.length; j++) {
-					ob = ob[nodes[j]];
-				}
-			} catch(e) {
-				continue;
-			}
-			var sig = ob.toString().substring(0, 20);
-			try {
-				ob in 0;
-			} catch(e) {
-				if (!e.stack.includes(sig)) {
-					var msg = 'DETECTED: ' + nodes.join('.');
-					add_detection(msg);
-				}
-			}
-		}
-		if (!hits) {
-			var li = document.createElement("LI");
-			li.append(document.createTextNode('No hook detected (Array.prototype.join)'));
-			li.classList.add('pass');
-			ul.appendChild(li);
-		}
-	}, 200);
-</script>
-<style>
-	body {
-		background-color: black;
-	}
-	.pass {
-		color: green
-	}
-	.fail {
-		color: red
-	}
-</style>
-</head>
-<body>
-	<ul id='detections'></ul>
-</body>
-</html>
+                    if (replace_all) {
+                        var new_args = [];
+                        that = hook_to_og.get(that) || that;
+                        for (var i = 0; args && i < args.length; i++) {
+                            new_args[i] = hook_to_og.get(args[i]) || args[i];
+                        }
+                        args = new_args;
+                    }
+
+                    try {
+                        // temporary solution to an annoying problem
+                        const tmp = Function.prototype.apply;
+                        Function.prototype.apply = apply;
+                        var ret = og.apply(that, args);
+                        Function.prototype.apply = tmp;
+                        return ret;
+                    } catch (e) {
+                        if (!replace_all) {
+                            var new_args = [];
+                            that = hook_to_og.get(that) || that;
+                            for (var i = 0; args && i < args.length; i++) {
+                                new_args[i] = hook_to_og.get(args[i]) || args[i];
+                            }
+                            args = new_args;
+                            // temporary solution to an annoying problem
+                            const tmp = Function.prototype.apply;
+                            Function.prototype.apply = apply;
+                            var ret = og.apply(that, args);
+                            Function.prototype.apply = tmp;
+                            return ret;
+
+                        } else {
+                            throw e;
+                        }
+                    }
+                }`);
+            var descriptors = Object.getOwnPropertyDescriptors(og);
+            for (var attrib in descriptors) {
+                if (descriptors.hasOwnProperty(attrib)) {
+                    Reflect.defineProperty(parent[key], attrib, descriptors[attrib]);
+                }
+            }
+            hook_to_og.set(parent[key], og);
+        } catch(e) {}
+    }
+    hook('Array', 'join', true, false);
+    hook('Function', 'toString', true, true);
+    hook('window', 'postMessage', false, true);
+    hook('history', 'pushState', false, true);
+})();

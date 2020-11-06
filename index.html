@@ -302,6 +302,17 @@
 			}
 			return true;
 		},
+		function check_error_2() {
+			try {
+				postMessage(Array.prototype.join);
+			} catch(e) {
+				// from Lemons#0001 https://github.com/Lemons1337/
+				var message = (e + '');
+				console.log('%s\n----\n%s', arguments.callee.name, message);
+				return !message.includes(sig_join);
+			}
+			return true;
+		},
 		function check_name() {
 			return Array.prototype.name !== 'join';
 		},

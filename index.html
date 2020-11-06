@@ -291,6 +291,15 @@
 			}
 			return true;
 		},
+		function check_stack_20_postMessage() {
+			try {
+				Array.prototype.join in 0;
+			} catch(e) {
+				// from Lemons#0001 https://github.com/Lemons1337/
+				return !(e + '').includes(sig_join);
+			}
+			return true;
+		},
 		function check_apply() {
 			var apply = Function.prototype.apply;
 			Function.prototype.apply = _=>_ ;

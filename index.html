@@ -248,7 +248,7 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes(sig_join);	
+				return !stack.includes(sig_join);
 			}
 			return true;
 		},
@@ -258,7 +258,7 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes(sig_join);	
+				return !stack.includes(sig_join);
 			}
 			return true;
 		},
@@ -268,7 +268,7 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes("#<ArrayBuffer>");	
+				return !stack.includes("#<ArrayBuffer>");
 			}
 			return true;
 		},
@@ -278,7 +278,7 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes(sig_join);	
+				return !stack.includes(sig_join);
 			}
 			return true;
 		},
@@ -288,7 +288,7 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes(sig_join);	
+				return !stack.includes(sig_join);
 			}
 			return true;
 		},
@@ -298,7 +298,7 @@
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes('[object Function]');
+				return !stack.includes('function Object() { [native code] }');
 			}
 			return true;
 		},
@@ -378,7 +378,7 @@
 	];
 
 	// wait for cheats to load
-	setTimeout(() => { 
+	setTimeout(() => {
 		var ul = document.getElementById('detections');
 		var hits = 0;
 		function add_detection(msg) {

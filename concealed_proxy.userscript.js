@@ -4,55 +4,48 @@
 // @run-at       document-start
 // ==/UserScript==
 
+// Remember to set TamperMonkeys inject mode to "instant"
+
 (function() {
     Error.prepareStackTrace = function(error, structuredStackTrace) {
         return error.stack.replace(/.*Object\.apply.*\n/g, '')
                           .replace(/(.*)Proxy\.(.*)/g, '$1Function.$2')
                           .replace(/(.*)Object\.(.*)/g, '$1Function.$2');
     };
-    var proxy_to_og = new WeakMap();
-    function hook(parent, key, replace) {
-        // replace is optional, if true then proxied this/arguments will be replaced with original
+    var proxyToOriginal = new WeakMap();
+    proxyToOriginal.get = WeakMap.prototype.get; // Avoid detection via tampering of WeakMap.prototype.get
+    const apply = Reflect.apply;                 // Avoid detection via tampering of Function.prototype.apply / Reflect.apply
+    function hook(parent, key, restoreOriginals) {
         try {
-            const og = parent[key];
-            if (proxy_to_og.get(og)) {
+            const original = parent[key];
+            if (proxyToOriginal.get(original)) {
                 return; // we're already a proxy
             }
-            parent[key] = new Proxy(og, {
+            parent[key] = new Proxy(original, {
                 apply: function(target, that, args) {
-                    if (replace) {
-                        var new_args = [];
-                        that = proxy_to_og.get(that) || that;
+                    if (restoreOriginals) {
+                        var newArgs = [];
+                        that = proxyToOriginal.get(that) || that;
                         for (var i = 0; args && i < args.length; i++) {
-                            new_args[i] = proxy_to_og.get(args[i]) || args[i];
+                            newArgs[i] = proxyToOriginal.get(args[i]) || args[i];
                         }
-                        args = new_args;
+                        args = newArgs;
                     }
                     try {
-                        return og.apply(that, args);
+                        return apply(original, that, args);
                     } catch (e) {
-                        if (!replace) {
-                            var new_args = [];
-                            that = proxy_to_og.get(that) || that;
-                            for (var i = 0; args && i < args.length; i++) {
-                                new_args[i] = proxy_to_og.get(args[i]) || args[i];
-                            }
-                            args = new_args;
-                            return og.apply(that, args);
-                        } else {
-                            throw e;
-                        }
+                        throw e
                     }
                 }
             })
-            proxy_to_og.set(parent[key], og);
+            proxyToOriginal.set(parent[key], original);
         } catch(e) {}
     };
     var descriptors = Object.getOwnPropertyDescriptors(window);
     for (var key in descriptors) {
         try {
             var prototype = window[key].prototype;
-            // find these with the some code
+            // Hook all prototype functions that can be applied to Array.prototype.join that can check if tampered
             hook(prototype, 'concat');
             hook(prototype, 'push');
             hook(prototype, 'join');
@@ -61,6 +54,7 @@
             hook(prototype, 'shift');
             hook(prototype, 'unshift');
             hook(prototype, 'splice');
+            // toString functions should always attempt to replace proxied "this" to original
             hook(prototype, 'toString', true);
             hook(prototype, 'toLocaleString', true);
             hook(prototype, 'toDateString', true);
@@ -68,5 +62,8 @@
             hook(prototype, 'toLocaleTimeString', true);
         } catch(e) {}
     }
+    // todo: Can be detected by checking if "Error.prepareStackTrace" is defined or by overwriting it
 
+    // todo: Can be detected by checking error message of "ArrayBuffer.prototype in 0".
+    //       The resulting string representation of "ArrayBuffer.prototype" behaves weird when "Object.prototype.toString" is truly non-native.
 })();

@@ -5,6 +5,7 @@
 	const sig_toString = "function toString() { [native code] }";
 	const sig_toDateString = "function toDateString() { [native code] }";
 	const sig_join = "function join() { [native code] }";
+	delete Error.prepareStackTrace; // attempt to remove tampering of stack trace
 	console.warn('loaded detector');
 
 	function get_getters(parent, key) {
@@ -262,17 +263,7 @@
 			}
 			return true;
 		},
-		function check_stack_16_ArrayBuffer() {
-			try {
-				ArrayBuffer.prototype in 0;
-			} catch(e) {
-				const stack = e.stack;
-				console.log('%s\n----\n%s', arguments.callee.name, stack);
-				return !stack.includes("#<ArrayBuffer>");
-			}
-			return true;
-		},
-		function check_stack_17_BigUint64Array_slice() {
+		function check_stack_16_BigUint64Array_slice() {
 			try {
 				BigUint64Array.prototype.slice.apply(Array.prototype.join);
 			} catch(e) {
@@ -282,7 +273,7 @@
 			}
 			return true;
 		},
-		function check_stack_18_BigUint64Array_sort() {
+		function check_stack_17_BigUint64Array_sort() {
 			try {
 				BigUint64Array.prototype.sort.apply(Array.prototype.join);
 			} catch(e) {
@@ -292,13 +283,89 @@
 			}
 			return true;
 		},
-		function check_stack_19_proxy() {
+		function check_stack_18_proxy() {
 			try {
 				new Proxy(Object,{}) in 0
 			} catch(e) {
 				const stack = e.stack;
 				console.log('%s\n----\n%s', arguments.callee.name, stack);
 				return !stack.includes('function Object() { [native code] }');
+			}
+			return true;
+		},
+		function check_SymbolToStringTag_ArrayBuffer() {
+			try {
+				ArrayBuffer.prototype in 0;
+			} catch(e) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return !stack.includes("#<ArrayBuffer>");
+			}
+			return true;
+		},
+		function check_SymbolToStringTag_DataView() {
+			try {
+				DataView.prototype in 0;
+			} catch(e) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return !stack.includes("#<DataView>");
+			}
+			return true;
+		},
+		function check_SymbolToStringTag_Map() {
+			try {
+				Map.prototype in 0;
+			} catch(e) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return !stack.includes("#<Map>");
+			}
+			return true;
+		},
+		function check_SymbolToStringTag_Object() {
+			try {
+				Object.prototype in 0;
+			} catch(e) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return !stack.includes("#<Object>");
+			}
+			return true;
+		},
+		function check_SymbolToStringTag_Promise() {
+			try {
+				Promise.prototype in 0;
+			} catch(e) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return !stack.includes("#<Promise>");
+			}
+			return true;
+		},
+		function check_SymbolToStringTag_Set() {
+			try {
+				Set.prototype in 0;
+			} catch(e) {
+				const stack = e.stack;
+				console.log('%s\n----\n%s', arguments.callee.name, stack);
+				return !stack.includes("#<Set>");
+			}
+			return true;
+		},
+		function check_SymbolToStringTag_TypeError() {
+			try {
+				TypeError.prototype in 0;
+			} catch(e) {
+				return !e.stack.includes("Cannot use 'in' operator to search for 'TypeError' in 0");
+			}
+			return true;
+		},
+		function check_SymbolToStringTag_SyntaxError() {
+			try {
+				SyntaxError.prototype in 0;
+			} catch(e) {
+				return !e.stack.includes("Cannot use 'in' operator to search for 'SyntaxError' in 0");
 			}
 			return true;
 		},
@@ -352,24 +419,49 @@
 		function check_length() {
 			return Array.prototype.join.length !== 1;
 		},
-		function check_apply() {
+		function check_apply_prototype_is_used() {
 			var apply = Function.prototype.apply;
 			Function.prototype.apply = _=>_ ;
 			var detected = Array.prototype.join([], []) !== '';
-			Function.prototype.apply = apply
+			detected |= Array.prototype.join.toString() !== sig_join;
+			Function.prototype.apply = apply;
 			return detected;
 		},
-		function check_TypeError_name_1() {
+		function check_apply_is_used() {
+			var apply = Array.prototype.join.apply;
+			Array.prototype.join.apply = _=>_ ;
+			var detected = Array.prototype.join([], []) !== '';
+			detected |= Array.prototype.join.toString() !== sig_join;
+			Array.prototype.join.apply = apply;
+			return detected;
+		},
+		function check_reflect_apply_is_used() {
+			var apply = Reflect.apply;
+			Reflect.apply = _=>_ ;
+			var detected = Array.prototype.join([], []) !== '';
+			detected |= Array.prototype.join.toString() !== sig_join;
+			Reflect.apply = apply;
+			return detected;
+		},
+		function check_WeakMap_get_is_used() {
+			var get = WeakMap.prototype.get;
+			WeakMap.prototype.get = _=>_ ;
+			var detected = Array.prototype.join([], []) !== '';
+			detected |= Array.prototype.join.toString() !== sig_join;
+			WeakMap.prototype.get = get;
+			return detected;
+		},
+		function check_Map_get_is_used() {
+			var get = Map.prototype.get;
+			Map.prototype.get = _=>_ ;
+			var detected = Array.prototype.join([], []) !== '';
+			detected |= Array.prototype.join.toString() !== sig_join;
+			Map.prototype.get = get;
+			return detected;
+		},
+		function check_TypeError_name() {
 			var getters = get_getters(TypeError.prototype, 'name');
 			return !getters.every(x => x === undefined);
-		},
-		function check_TypeError_name_2() {
-			try {
-				TypeError.prototype in 0;
-			} catch(e) {
-				return !e.stack.includes("Cannot use 'in' operator to search for 'TypeError' in 0");
-			}
-			return true;
 		},
 		function check_Error_prepareStackTrace() {
 			var desciptors = get_descriptors(Error, 'prepareStackTrace');
